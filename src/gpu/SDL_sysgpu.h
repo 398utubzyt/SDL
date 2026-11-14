@@ -688,6 +688,16 @@ struct SDL_GPUDevice
         SDL_GPURenderer *driverData,
         const SDL_GPUGraphicsPipelineCreateInfo *createinfo);
 
+    bool (*CreateDescriptorSet)(
+        SDL_GPURenderer *driverData,
+        SDL_GPUDescriptorSetLayout *const *layouts,
+        SDL_GPUDescriptorSet **sets,
+        Uint32 numSets);
+
+    SDL_GPUDescriptorSetLayout *(*CreateDescriptorSetLayout)(
+        SDL_GPURenderer *driverData,
+        const SDL_GPUDescriptorSetLayoutCreateInfo *createinfo);
+
     SDL_GPUSampler *(*CreateSampler)(
         SDL_GPURenderer *driverData,
         const SDL_GPUSamplerCreateInfo *createinfo);
@@ -770,6 +780,14 @@ struct SDL_GPUDevice
     void (*ReleaseTransferBuffer)(
         SDL_GPURenderer *driverData,
         SDL_GPUTransferBuffer *transferBuffer);
+
+    void (*ReleaseDescriptorSet)(
+        SDL_GPURenderer *driverData,
+        SDL_GPUDescriptorSet *descriptorSet);
+
+    void (*ReleaseDescriptorSetLayout)(
+        SDL_GPURenderer *driverData,
+        SDL_GPUDescriptorSetLayout *descriptorSetLayout);
 
     void (*ReleaseShader)(
         SDL_GPURenderer *driverData,
@@ -1133,9 +1151,11 @@ struct SDL_GPUDevice
 #define ASSIGN_DRIVER(name)                                 \
     ASSIGN_DRIVER_FUNC(DestroyDevice, name)                 \
     ASSIGN_DRIVER_FUNC(DestroyXRSwapchain, name)            \
-    ASSIGN_DRIVER_FUNC(GetDeviceProperties, name)      \
+    ASSIGN_DRIVER_FUNC(GetDeviceProperties, name)           \
     ASSIGN_DRIVER_FUNC(CreateComputePipeline, name)         \
     ASSIGN_DRIVER_FUNC(CreateGraphicsPipeline, name)        \
+    ASSIGN_DRIVER_FUNC(CreateDescriptorSet, name)           \
+    ASSIGN_DRIVER_FUNC(CreateDescriptorSetLayout, name)     \
     ASSIGN_DRIVER_FUNC(CreateSampler, name)                 \
     ASSIGN_DRIVER_FUNC(CreateShader, name)                  \
     ASSIGN_DRIVER_FUNC(CreateTexture, name)                 \
@@ -1153,6 +1173,8 @@ struct SDL_GPUDevice
     ASSIGN_DRIVER_FUNC(ReleaseSampler, name)                \
     ASSIGN_DRIVER_FUNC(ReleaseBuffer, name)                 \
     ASSIGN_DRIVER_FUNC(ReleaseTransferBuffer, name)         \
+    ASSIGN_DRIVER_FUNC(ReleaseDescriptorSet, name)          \
+    ASSIGN_DRIVER_FUNC(ReleaseDescriptorSetLayout, name)    \
     ASSIGN_DRIVER_FUNC(ReleaseShader, name)                 \
     ASSIGN_DRIVER_FUNC(ReleaseComputePipeline, name)        \
     ASSIGN_DRIVER_FUNC(ReleaseGraphicsPipeline, name)       \

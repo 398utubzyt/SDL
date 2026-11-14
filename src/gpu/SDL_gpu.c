@@ -1003,41 +1003,27 @@ SDL_GPUComputePipeline *SDL_CreateGPUComputePipeline(
             SDL_assert_release(!"Incompatible shader format for GPU backend");
             return NULL;
         }
-        if (createinfo->num_readwrite_storage_textures > MAX_COMPUTE_WRITE_TEXTURES) {
-            SDL_COMPILE_TIME_ASSERT(compute_write_textures, MAX_COMPUTE_WRITE_TEXTURES == 8);
-            SDL_assert_release(!"Compute pipeline write-only texture count cannot be higher than 8!");
-            return NULL;
-        }
-        if (createinfo->num_readwrite_storage_buffers > MAX_COMPUTE_WRITE_BUFFERS) {
-            SDL_COMPILE_TIME_ASSERT(compute_write_buffers, MAX_COMPUTE_WRITE_BUFFERS == 8);
-            SDL_assert_release(!"Compute pipeline write-only buffer count cannot be higher than 8!");
-            return NULL;
-        }
-        if (createinfo->num_samplers > MAX_TEXTURE_SAMPLERS_PER_STAGE) {
-            SDL_COMPILE_TIME_ASSERT(compute_texture_samplers, MAX_TEXTURE_SAMPLERS_PER_STAGE == 16);
-            SDL_assert_release(!"Compute pipeline sampler count cannot be higher than 16!");
-            return NULL;
-        }
-        if (createinfo->num_readonly_storage_textures > MAX_STORAGE_TEXTURES_PER_STAGE) {
-            SDL_COMPILE_TIME_ASSERT(compute_storage_textures, MAX_STORAGE_TEXTURES_PER_STAGE == 8);
-            SDL_assert_release(!"Compute pipeline readonly storage texture count cannot be higher than 8!");
-            return NULL;
-        }
-        if (createinfo->num_readonly_storage_buffers > MAX_STORAGE_BUFFERS_PER_STAGE) {
-            SDL_COMPILE_TIME_ASSERT(compute_storage_buffers, MAX_STORAGE_BUFFERS_PER_STAGE == 8);
-            SDL_assert_release(!"Compute pipeline readonly storage buffer count cannot be higher than 8!");
-            return NULL;
-        }
-        if (createinfo->num_uniform_buffers > MAX_UNIFORM_BUFFERS_PER_STAGE) {
-            SDL_COMPILE_TIME_ASSERT(compute_uniform_buffers, MAX_UNIFORM_BUFFERS_PER_STAGE == 4);
-            SDL_assert_release(!"Compute pipeline uniform buffer count cannot be higher than 4!");
-            return NULL;
-        }
         if (createinfo->threadcount_x == 0 ||
             createinfo->threadcount_y == 0 ||
             createinfo->threadcount_z == 0) {
             SDL_assert_release(!"Compute pipeline threadCount dimensions must be at least 1!");
             return NULL;
+        }
+
+        if (createinfo->layout_state.num_layouts != 0) {
+            if (createinfo->layout_state.layouts == NULL) {
+                SDL_assert_release(!"Descriptor set layouts array pointer cannot be NULL!");
+                return NULL;
+            }
+
+            for (Uint32 i = 0; i < createinfo->layout_state.num_layouts; i += 1) {
+                if (createinfo->layout_state.layouts[i] == NULL) {
+                    SDL_assert_release(!"Descriptor set layout pointers cannot be NULL!");
+                    return NULL;
+                }
+            }
+
+            // TODO: Set maximum descriptor sets and check them
         }
     }
 
@@ -1175,11 +1161,50 @@ SDL_GPUGraphicsPipeline *SDL_CreateGPUGraphicsPipeline(
             SDL_assert_release(!"Rasterizer state enable_depth_clip must be set to true (FEATURE_DEPTH_CLAMPING disabled)");
             return NULL;
         }
+
+        if (graphicsPipelineCreateInfo->layout_state.num_layouts != 0) {
+            if (graphicsPipelineCreateInfo->layout_state.layouts == NULL) {
+                SDL_assert_release(!"Descriptor set layouts array pointer cannot be NULL!");
+                return NULL;
+            }
+
+            for (Uint32 i = 0; i < graphicsPipelineCreateInfo->layout_state.num_layouts; i += 1) {
+                if (graphicsPipelineCreateInfo->layout_state.layouts[i] == NULL) {
+                    SDL_assert_release(!"Descriptor set layout pointers cannot be NULL!");
+                    return NULL;
+                }
+            }
+
+            // TODO: Set maximum descriptor sets and check them
+        }
     }
 
     return device->CreateGraphicsPipeline(
         device->driverData,
         graphicsPipelineCreateInfo);
+}
+
+SDL_GPUDescriptorSetLayout *SDL_CreateGPUDescriptorSetLayout(
+    SDL_GPUDevice *device,
+    const SDL_GPUDescriptorSetLayoutCreateInfo *createinfo)
+{
+    CHECK_DEVICE_MAGIC(device, NULL);
+
+    CHECK_PARAM(createinfo == NULL) {
+        SDL_InvalidParamError("createinfo");
+        return NULL;
+    }
+
+    if (device->debug_mode) {
+        if (createinfo->num_ranges == 0) {
+            SDL_assert_release(!"Descriptor range count cannot be zero!");
+            return NULL;
+        }
+    }
+
+    return device->CreateDescriptorSetLayout(
+        device->driverData,
+        createinfo);
 }
 
 SDL_GPUSampler *SDL_CreateGPUSampler(
@@ -1226,7 +1251,7 @@ SDL_GPUShader *SDL_CreateGPUShader(
             SDL_assert_release(!"Incompatible shader format for GPU backend");
             return NULL;
         }
-        if (createinfo->num_samplers > MAX_TEXTURE_SAMPLERS_PER_STAGE) {
+        /*if (createinfo->num_samplers > MAX_TEXTURE_SAMPLERS_PER_STAGE) {
             SDL_COMPILE_TIME_ASSERT(shader_texture_samplers, MAX_TEXTURE_SAMPLERS_PER_STAGE == 16);
             SDL_assert_release(!"Shader sampler count cannot be higher than 16!");
             return NULL;
@@ -1245,7 +1270,7 @@ SDL_GPUShader *SDL_CreateGPUShader(
             SDL_COMPILE_TIME_ASSERT(shader_uniform_buffers, MAX_UNIFORM_BUFFERS_PER_STAGE == 4);
             SDL_assert_release(!"Shader uniform buffer count cannot be higher than 4!");
             return NULL;
-        }
+        }*/
     }
 
     return device->CreateShader(

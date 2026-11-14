@@ -499,6 +499,26 @@ typedef struct SDL_GPUSampler SDL_GPUSampler;
 typedef struct SDL_GPUShader SDL_GPUShader;
 
 /**
+ * An opaque handle representing a descriptor set.
+ *
+ * \since This struct is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_CreateGPUDescriptorSet
+ * \sa SDL_ReleaseGPUDescriptorSet
+ */
+typedef struct SDL_GPUDescriptorSet SDL_GPUDescriptorSet;
+
+/**
+ * An opaque handle representing a descriptor set layout.
+ *
+ * \since This struct is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_CreateGPUDescriptorSetLayout
+ * \sa SDL_ReleaseGPUDescriptorSetLayout
+ */
+typedef struct SDL_GPUDescriptorSetLayout SDL_GPUDescriptorSetLayout;
+
+/**
  * An opaque handle representing a compute pipeline.
  *
  * Used during compute passes.
@@ -599,6 +619,25 @@ typedef struct SDL_GPUCopyPass SDL_GPUCopyPass;
  * \sa SDL_ReleaseGPUFence
  */
 typedef struct SDL_GPUFence SDL_GPUFence;
+
+/**
+ * Specifies the resource type of a descriptor range.
+ *
+ * \since This enum is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_CreateGPUDescriptorSet
+ */
+typedef enum SDL_GPUDescriptorRangeType
+{
+    SDL_GPU_DESCRIPTORRANGETYPE_INVALID,
+    SDL_GPU_DESCRIPTORRANGETYPE_IMAGE_SAMPLER,  /**< A range of combined image and sampler resources. */
+    SDL_GPU_DESCRIPTORRANGETYPE_SAMPLER,        /**< A range of sampler resources. */
+    SDL_GPU_DESCRIPTORRANGETYPE_SAMPLED_IMAGE,  /**< A range of sampled image resources. */
+    SDL_GPU_DESCRIPTORRANGETYPE_STORAGE_IMAGE,  /**< A range of storage image resources. */
+    SDL_GPU_DESCRIPTORRANGETYPE_UNIFORM_BUFFER, /**< A range of uniform buffer resources. */
+    SDL_GPU_DESCRIPTORRANGETYPE_STORAGE_BUFFER, /**< A range of storage buffer resources. */
+    SDL_GPU_DESCRIPTORRANGETYPE_RENDER_TARGET   /**< A range of render target resources. */
+} SDL_GPUDescriptorRangeType;
 
 /**
  * Specifies the primitive topology of a graphics pipeline.
@@ -1030,6 +1069,25 @@ typedef enum SDL_GPUShaderStage
     SDL_GPU_SHADERSTAGE_VERTEX,
     SDL_GPU_SHADERSTAGE_FRAGMENT
 } SDL_GPUShaderStage;
+
+/**
+ * Specifies which stages a shader parameter is visible to.
+ *
+ * \since This enum is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_CreateGPUDescriptorSetLayout
+ */
+typedef Uint32 SDL_GPUShaderVisibility;
+
+#define SDL_GPU_SHADERVISIBILITY_NONE     0         /**< No shader stages. */
+#define SDL_GPU_SHADERVISIBILITY_VERTEX   (1u << 0) /**< Vertex stage. */
+#define SDL_GPU_SHADERVISIBILITY_FRAGMENT (1u << 1) /**< Fragment stage. */
+#define SDL_GPU_SHADERVISIBILITY_COMPUTE  (1u << 2) /**< Compute stage. */
+#define SDL_GPU_SHADERVISIBILITY_ALL (  \
+    SDL_GPU_SHADERVISIBILITY_VERTEX   | \
+    SDL_GPU_SHADERVISIBILITY_FRAGMENT | \
+    SDL_GPU_SHADERVISIBILITY_COMPUTE    \
+)                                                   /**< All shader stages. */
 
 /**
  * Specifies the format of shader code.
@@ -1767,10 +1825,6 @@ typedef struct SDL_GPUShaderCreateInfo
     const char *entrypoint;       /**< A pointer to a null-terminated UTF-8 string specifying the entry point function name for the shader. */
     SDL_GPUShaderFormat format;   /**< The format of the shader code. */
     SDL_GPUShaderStage stage;     /**< The stage the shader program corresponds to. */
-    Uint32 num_samplers;          /**< The number of samplers defined in the shader. */
-    Uint32 num_storage_textures;  /**< The number of storage textures defined in the shader. */
-    Uint32 num_storage_buffers;   /**< The number of storage buffers defined in the shader. */
-    Uint32 num_uniform_buffers;   /**< The number of uniform buffers defined in the shader. */
 
     SDL_PropertiesID props;       /**< A properties ID for extensions. Should be 0 if no extensions are needed. */
 } SDL_GPUShaderCreateInfo;
@@ -1838,6 +1892,87 @@ typedef struct SDL_GPUTransferBufferCreateInfo
 
     SDL_PropertiesID props;            /**< A properties ID for extensions. Should be 0 if no extensions are needed. */
 } SDL_GPUTransferBufferCreateInfo;
+
+/* Descriptor set structures */
+
+/**
+ * A structure specifying the parameters of a descriptor range within a descriptor set.
+ *
+ * \since This struct is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_GPUDescriptorSetLayoutCreateInfo
+ */
+typedef struct SDL_GPUDescriptorRangeDesc
+{
+    Uint32 binding;
+    Uint32 count;
+    SDL_GPUDescriptorRangeType type;
+} SDL_GPUDescriptorRangeDesc;
+
+/**
+ * A structure specifying the parameters of a descriptor set element.
+ *
+ * \since This struct is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_CreateGPUDescriptorSetLayout
+ */
+typedef struct SDL_GPUDescriptorSetLayoutCreateInfo
+{
+    SDL_GPUDescriptorRangeDesc *ranges;
+    Uint32 num_ranges;
+    SDL_GPUShaderVisibility visibility;
+
+    SDL_PropertiesID props; /**< A properties ID for extensions. Should be 0 if no extensions are needed. */
+} SDL_GPUDescriptorSetLayoutCreateInfo;
+
+/**
+ * A structure specifying parameters of a write operation to a buffer in a descriptor set.
+ *
+ * \since This struct is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_GPUDescriptorSetWriteInfo
+ */
+typedef struct SDL_GPUDescriptorBufferDesc
+{
+    SDL_GPUBuffer *buffer;
+    Uint32 offset;
+    Uint32 size;
+} SDL_GPUDescriptorBufferDesc;
+
+/**
+ * A structure specifying parameters of a write operation to an image in a descriptor set.
+ *
+ * \since This struct is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_GPUDescriptorSetWriteInfo
+ */
+typedef struct SDL_GPUDescriptorImageDesc
+{
+    SDL_GPUSampler *sampler;
+    SDL_GPUTexture *texture;
+} SDL_GPUDescriptorImageDesc;
+
+/**
+ * A structure specifying parameters of a write operation to a descriptor set.
+ *
+ * \since This struct is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_UpdateGPUDescriptorSet
+ */
+typedef struct SDL_GPUDescriptorSetWriteInfo
+{
+    SDL_GPUDescriptorSet *set;
+    Uint32 binding;
+    Uint32 array_element;
+    Uint32 descriptor_count;
+    SDL_GPUDescriptorRangeType descriptor_type;
+    SDL_GPUDescriptorBufferDesc *buffers;
+    SDL_GPUDescriptorImageDesc *images;
+    bool cycle;
+    Uint8 padding1;
+    Uint8 padding2;
+    Uint8 padding3;
+} SDL_GPUDescriptorSetWriteInfo;
 
 /* Pipeline state structures */
 
@@ -1956,6 +2091,20 @@ typedef struct SDL_GPUGraphicsPipelineTargetInfo
 } SDL_GPUGraphicsPipelineTargetInfo;
 
 /**
+ * A structure specifying the descriptions of descriptor set layouts used in a
+ * pipeline.
+ *
+ * \since This struct is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_GPUGraphicsPipelineCreateInfo
+ * \sa SDL_GPUComputePipelineCreateInfo
+ */
+typedef struct SDL_GPUPipelineLayoutState {
+    SDL_GPUDescriptorSetLayout *const *layouts;
+    Uint32 num_layouts;
+} SDL_GPUPipelineLayoutState;
+
+/**
  * A structure specifying the parameters of a graphics pipeline state.
  *
  * \since This struct is available since SDL 3.2.0.
@@ -1979,6 +2128,7 @@ typedef struct SDL_GPUGraphicsPipelineCreateInfo
     SDL_GPUMultisampleState multisample_state;      /**< The multisample state of the graphics pipeline. */
     SDL_GPUDepthStencilState depth_stencil_state;   /**< The depth-stencil state of the graphics pipeline. */
     SDL_GPUGraphicsPipelineTargetInfo target_info;  /**< Formats and blend modes for the render targets of the graphics pipeline. */
+    SDL_GPUPipelineLayoutState layout_state;        /**< The descriptor layout state of the graphics pipeline. */
 
     SDL_PropertiesID props;                         /**< A properties ID for extensions. Should be 0 if no extensions are needed. */
 } SDL_GPUGraphicsPipelineCreateInfo;
@@ -1993,21 +2143,16 @@ typedef struct SDL_GPUGraphicsPipelineCreateInfo
  */
 typedef struct SDL_GPUComputePipelineCreateInfo
 {
-    size_t code_size;                       /**< The size in bytes of the compute shader code pointed to. */
-    const Uint8 *code;                      /**< A pointer to compute shader code. */
-    const char *entrypoint;                 /**< A pointer to a null-terminated UTF-8 string specifying the entry point function name for the shader. */
-    SDL_GPUShaderFormat format;             /**< The format of the compute shader code. */
-    Uint32 num_samplers;                    /**< The number of samplers defined in the shader. */
-    Uint32 num_readonly_storage_textures;   /**< The number of readonly storage textures defined in the shader. */
-    Uint32 num_readonly_storage_buffers;    /**< The number of readonly storage buffers defined in the shader. */
-    Uint32 num_readwrite_storage_textures;  /**< The number of read-write storage textures defined in the shader. */
-    Uint32 num_readwrite_storage_buffers;   /**< The number of read-write storage buffers defined in the shader. */
-    Uint32 num_uniform_buffers;             /**< The number of uniform buffers defined in the shader. */
-    Uint32 threadcount_x;                   /**< The number of threads in the X dimension. This should match the value in the shader. */
-    Uint32 threadcount_y;                   /**< The number of threads in the Y dimension. This should match the value in the shader. */
-    Uint32 threadcount_z;                   /**< The number of threads in the Z dimension. This should match the value in the shader. */
+    size_t code_size;                           /**< The size in bytes of the compute shader code pointed to. */
+    const Uint8 *code;                          /**< A pointer to compute shader code. */
+    const char *entrypoint;                     /**< A pointer to a null-terminated UTF-8 string specifying the entry point function name for the shader. */
+    SDL_GPUShaderFormat format;                 /**< The format of the compute shader code. */
+    Uint32 threadcount_x;                       /**< The number of threads in the X dimension. This should match the value in the shader. */
+    Uint32 threadcount_y;                       /**< The number of threads in the Y dimension. This should match the value in the shader. */
+    Uint32 threadcount_z;                       /**< The number of threads in the Z dimension. This should match the value in the shader. */
+    SDL_GPUPipelineLayoutState layout_state;    /**< The descriptor layout state of the compute pipeline. */
 
-    SDL_PropertiesID props;                 /**< A properties ID for extensions. Should be 0 if no extensions are needed. */
+    SDL_PropertiesID props;                     /**< A properties ID for extensions. Should be 0 if no extensions are needed. */
 } SDL_GPUComputePipelineCreateInfo;
 
 /**
@@ -2454,11 +2599,11 @@ typedef struct SDL_GPUVulkanOptions
 {
     Uint32 vulkan_api_version; /**< The Vulkan API version to request for the instance. Use Vulkan's VK_MAKE_VERSION or VK_MAKE_API_VERSION. */
     void *feature_list; /**< Pointer to the first element of a chain of Vulkan feature structs. (Requires API version 1.1 or higher.)*/
-	void *vulkan_10_physical_device_features; /**< Pointer to a VkPhysicalDeviceFeatures struct to enable additional Vulkan 1.0 features. */
-	Uint32 device_extension_count; /**< Number of additional device extensions to require. */
-	const char **device_extension_names; /**< Pointer to a list of additional device extensions to require. */
-	Uint32 instance_extension_count; /**< Number of additional instance extensions to require. */
-	const char **instance_extension_names; /**< Pointer to a list of additional instance extensions to require. */
+    void *vulkan_10_physical_device_features; /**< Pointer to a VkPhysicalDeviceFeatures struct to enable additional Vulkan 1.0 features. */
+    Uint32 device_extension_count; /**< Number of additional device extensions to require. */
+    const char **device_extension_names; /**< Pointer to a list of additional device extensions to require. */
+    Uint32 instance_extension_count; /**< Number of additional instance extensions to require. */
+    const char **instance_extension_names; /**< Pointer to a list of additional instance extensions to require. */
 } SDL_GPUVulkanOptions;
 
 /**
@@ -2882,6 +3027,68 @@ extern SDL_DECLSPEC SDL_GPUGraphicsPipeline * SDLCALL SDL_CreateGPUGraphicsPipel
     const SDL_GPUGraphicsPipelineCreateInfo *createinfo);
 
 #define SDL_PROP_GPU_GRAPHICSPIPELINE_CREATE_NAME_STRING "SDL.gpu.graphicspipeline.create.name"
+
+/**
+ * Creates a descriptor set to be used when passing pipeline parameters to the
+ * GPU.
+ *
+ * There are optional properties that can be provided through `props`. These
+ * are the supported properties:
+ *
+ * - `SDL_PROP_GPU_DESCRIPTORSET_CREATE_NAME_STRING`: a name that can be
+ *   displayed in debugging tools.
+ *
+ * \param device a GPU Context.
+ * \param layouts an array of descriptor set layouts that describe the
+ *                corresponding sets.
+ * \param sets an array of descriptor sets to be populated.
+ * \param num_sets the number of descriptor sets to allocate and pass to the
+ *                 array.
+ * \returns true on success, or false on failure; call SDL_GetError() for more
+ *          information.
+ *
+ * \since This function is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_CreateGPUDescriptorSetLayout
+ * \sa SDL_BindGPUGraphicsPipeline
+ * \sa SDL_ReleaseGPUDescriptorSet
+ */
+extern SDL_DECLSPEC bool SDLCALL SDL_CreateGPUDescriptorSet(
+    SDL_GPUDevice *device,
+    SDL_GPUDescriptorSetLayout *const *layouts,
+    SDL_GPUDescriptorSet **sets,
+    Uint32 num_sets);
+
+#define SDL_PROP_GPU_DESCRIPTORSET_CREATE_NAME_STRING "SDL.gpu.descriptorset.create.name"
+
+/**
+ * Creates a descriptor set layout to be used when creating descriptor set
+ * and pipeline objects.
+ *
+ * There are optional properties that can be provided through `props`. These
+ * are the supported properties:
+ *
+ * - `SDL_PROP_GPU_DESCRIPTORSETLAYOUT_CREATE_NAME_STRING`: a name that can be
+ *   displayed in debugging tools.
+ *
+ * \param device a GPU Context.
+ * \param createinfo a struct describing the state of the descriptor set
+ *                   layout to create.
+ * \returns a descriptor set layout object on success, or NULL on failure;
+ *          call SDL_GetError() for more information.
+ *
+ * \since This function is available since mwSDL 3.6.0.
+ *
+ * \sa SDL_CreateGPUDescriptorSet
+ * \sa SDL_CreateGPUGraphicsPipeline
+ * \sa SDL_CreateGPUComputePipeline
+ * \sa SDL_ReleaseGPUDescriptorSetLayout
+ */
+extern SDL_DECLSPEC SDL_GPUDescriptorSetLayout * SDLCALL SDL_CreateGPUDescriptorSetLayout(
+    SDL_GPUDevice *device,
+    const SDL_GPUDescriptorSetLayoutCreateInfo *createinfo);
+
+#define SDL_PROP_GPU_DESCRIPTORSETLAYOUT_CREATE_NAME_STRING "SDL.gpu.descriptorsetlayout.create.name"
 
 /**
  * Creates a sampler object to be used when binding textures in a graphics
@@ -3444,6 +3651,35 @@ extern SDL_DECLSPEC void SDLCALL SDL_ReleaseGPUBuffer(
 extern SDL_DECLSPEC void SDLCALL SDL_ReleaseGPUTransferBuffer(
     SDL_GPUDevice *device,
     SDL_GPUTransferBuffer *transfer_buffer);
+
+/**
+ * Frees the given descriptor set as soon as it is safe to do so.
+ *
+ * You must not reference the descriptor set after calling this function.
+ *
+ * \param device a GPU context.
+ * \param descriptor_set a descriptor set to be destroyed.
+ *
+ * \since This function is available since mwSDL 3.6.0.
+ */
+extern SDL_DECLSPEC void SDLCALL SDL_ReleaseGPUDescriptorSet(
+    SDL_GPUDevice *device,
+    SDL_GPUDescriptorSet *descriptor_set);
+
+/**
+ * Frees the given descriptor set layout as soon as it is safe to do so.
+ *
+ * You must not reference the descriptor set layout after calling this
+ * function.
+ *
+ * \param device a GPU context.
+ * \param descriptor_set_layout a descriptor set layout to be destroyed.
+ *
+ * \since This function is available since mwSDL 3.6.0.
+ */
+extern SDL_DECLSPEC void SDLCALL SDL_ReleaseGPUDescriptorSetLayout(
+    SDL_GPUDevice *device,
+    SDL_GPUDescriptorSetLayout *descriptor_set_layout);
 
 /**
  * Frees the given compute pipeline as soon as it is safe to do so.

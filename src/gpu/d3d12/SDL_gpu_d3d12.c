@@ -740,6 +740,8 @@ typedef struct D3D12CommandBufferPool D3D12CommandBufferPool;
 typedef struct D3D12CommandBuffer D3D12CommandBuffer;
 typedef struct D3D12Texture D3D12Texture;
 typedef struct D3D12Shader D3D12Shader;
+typedef struct D3D12DescriptorSetLayout D3D12DescriptorSetLayout;
+typedef struct D3D12DescriptorSet D3D12DescriptorSet;
 typedef struct D3D12GraphicsPipeline D3D12GraphicsPipeline;
 typedef struct D3D12ComputePipeline D3D12ComputePipeline;
 typedef struct D3D12Buffer D3D12Buffer;
@@ -1139,10 +1141,19 @@ struct D3D12Shader
     size_t bytecodeSize;
 
     SDL_GPUShaderStage stage;
-    Uint32 num_samplers;
-    Uint32 numUniformBuffers;
-    Uint32 numStorageBuffers;
-    Uint32 numStorageTextures;
+};
+
+struct D3D12DescriptorSetLayout
+{
+    ID3D12RootSignature *handle;
+    SDL_AtomicInt referenceCount;
+};
+
+struct D3D12DescriptorSet
+{
+    D3D12DescriptorSetLayout *layout;
+    D3D12StagingDescriptor *heap;
+    SDL_AtomicInt referenceCount;
 };
 
 typedef struct D3D12GraphicsRootSignature

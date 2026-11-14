@@ -577,12 +577,20 @@ typedef struct VulkanShader
     VkShaderModule shaderModule;
     char *entrypointName;
     SDL_GPUShaderStage stage;
-    Uint32 numSamplers;
-    Uint32 numStorageTextures;
-    Uint32 numStorageBuffers;
-    Uint32 numUniformBuffers;
     SDL_AtomicInt referenceCount;
 } VulkanShader;
+
+typedef struct VulkanDescriptorSetLayout
+{
+    VkDescriptorSetLayout layout;
+    SDL_AtomicInt referenceCount;
+} VulkanDescriptorSetLayout;
+
+typedef struct VulkanDescriptorSet
+{
+    VkDescriptorSet set;
+    SDL_AtomicInt referenceCount;
+} VulkanDescriptorSet;
 
 /* Textures are made up of individual subresources.
  * This helps us barrier the resource efficiently.
@@ -765,64 +773,70 @@ typedef struct DescriptorSetCache
     Uint32 poolCount;
 } DescriptorSetCache;
 
+typedef struct DescriptorSetLayoutKey
+{
+    SDL_GPUDescriptorRangeDesc *ranges;
+    Uint32 num_ranges;
+    SDL_GPUShaderVisibility visibility;
+} DescriptorSetLayoutKey;
+
 typedef struct DescriptorSetLayoutHashTableKey
 {
     VkShaderStageFlagBits shaderStage;
-    // Category 1: read resources
-    Uint32 samplerCount;
-    Uint32 storageBufferCount;
-    Uint32 storageTextureCount;
-    // Category 2: write resources
-    Uint32 writeStorageBufferCount;
-    Uint32 writeStorageTextureCount;
-    // Category 3: uniform buffers
-    Uint32 uniformBufferCount;
+    Uint32 numLayouts;
+    DescriptorSetLayoutKey *layouts;
+    // // Category 1: read resources
+    // Uint32 samplerCount;
+    // Uint32 storageBufferCount;
+    // Uint32 storageTextureCount;
+    // // Category 2: write resources
+    // Uint32 writeStorageBufferCount;
+    // Uint32 writeStorageTextureCount;
+    // // Category 3: uniform buffers
+    // Uint32 uniformBufferCount;
 } DescriptorSetLayoutHashTableKey;
 
-typedef uint32_t DescriptorSetLayoutID;
-
-typedef struct DescriptorSetLayout
-{
-    DescriptorSetLayoutID ID;
-    VkDescriptorSetLayout descriptorSetLayout;
-
-    // Category 1: read resources
-    Uint32 samplerCount;
-    Uint32 storageBufferCount;
-    Uint32 storageTextureCount;
-    // Category 2: write resources
-    Uint32 writeStorageBufferCount;
-    Uint32 writeStorageTextureCount;
-    // Category 3: uniform buffers
-    Uint32 uniformBufferCount;
-} DescriptorSetLayout;
+// typedef uint32_t DescriptorSetLayoutID;
+// 
+// typedef struct DescriptorSetLayout
+// {
+//     DescriptorSetLayoutID ID;
+//     VkDescriptorSetLayout descriptorSetLayout;
+// 
+//     // Category 1: read resources
+//     Uint32 samplerCount;
+//     Uint32 storageBufferCount;
+//     Uint32 storageTextureCount;
+//     // Category 2: write resources
+//     Uint32 writeStorageBufferCount;
+//     Uint32 writeStorageTextureCount;
+//     // Category 3: uniform buffers
+//     Uint32 uniformBufferCount;
+// } DescriptorSetLayout;
 
 typedef struct GraphicsPipelineResourceLayoutHashTableKey
 {
-    Uint32 vertexSamplerCount;
-    Uint32 vertexStorageTextureCount;
-    Uint32 vertexStorageBufferCount;
-    Uint32 vertexUniformBufferCount;
-
-    Uint32 fragmentSamplerCount;
-    Uint32 fragmentStorageTextureCount;
-    Uint32 fragmentStorageBufferCount;
-    Uint32 fragmentUniformBufferCount;
+    Uint32 numLayouts;
+    VulkanDescriptorSetLayout *layouts;
 } GraphicsPipelineResourceLayoutHashTableKey;
 
 typedef struct VulkanGraphicsPipelineResourceLayout
 {
     VkPipelineLayout pipelineLayout;
 
-    /*
-     * Descriptor set layout is as follows:
-     * 0: vertex resources
-     * 1: vertex uniform buffers
-     * 2: fragment resources
-     * 3: fragment uniform buffers
-     */
-    DescriptorSetLayout *descriptorSetLayouts[4];
+    // /*
+    //  * Descriptor set layout is as follows:
+    //  * 0: vertex resources
+    //  * 1: vertex uniform buffers
+    //  * 2: fragment resources
+    //  * 3: fragment uniform buffers
+    //  */
+    // DescriptorSetLayout *descriptorSetLayouts[4];
 
+    Uint32 numDescriptorLayouts;
+    VulkanDescriptorSetLayout *descriptorSetLayouts2;
+
+    /*
     Uint32 vertexSamplerCount;
     Uint32 vertexStorageTextureCount;
     Uint32 vertexStorageBufferCount;
@@ -832,6 +846,7 @@ typedef struct VulkanGraphicsPipelineResourceLayout
     Uint32 fragmentStorageTextureCount;
     Uint32 fragmentStorageBufferCount;
     Uint32 fragmentUniformBufferCount;
+    */
 } VulkanGraphicsPipelineResourceLayout;
 
 typedef struct VulkanGraphicsPipeline
